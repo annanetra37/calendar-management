@@ -1,0 +1,27 @@
+# Web
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Config and validation
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# Database
+SQLAlchemy==2.0.36
+alembic==1.14.0
+psycopg[binary]==3.2.3
+
+# HTTP — Telegram, Whisper, the extraction model and Google Calendar are all
+# called over plain REST with this one client. See README, "deliberate
+# deviations", for why the vendor SDKs are not used.
+httpx==0.28.1
+
+# Google refresh-token encryption at rest
+cryptography==44.0.0
+
+# IANA timezone database: python:3.12-slim has no system tzdata, and every
+# spoken time is resolved through zoneinfo.
+tzdata==2024.2
+
+# Error reporting (optional at runtime: inactive when SENTRY_DSN is unset)
+sentry-sdk==2.19.2

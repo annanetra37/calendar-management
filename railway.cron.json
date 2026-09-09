@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "//": "Config for the second Railway service: the nightly reconciliation cron (T-24, T-34). Set this service's config path to railway.cron.json and its cron schedule to '15 2 * * *' (02:15 UTC = 06:15 Yerevan).",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "python -m app.jobs.reconcile",
+    "restartPolicyType": "NEVER"
+  }
+}

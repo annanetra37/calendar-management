@@ -1,0 +1,33 @@
+[project]
+name = "voice-calendar"
+version = "1.0.0"
+description = "Voice-to-Calendar scheduling service: voice notes to Google Calendar placeholders"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [".venv", "alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RUF", "ASYNC"]
+ignore = [
+    "B008",    # FastAPI's Depends()/Header() defaults are the documented idiom
+    "RUF001",  # ambiguous unicode: the fixtures are deliberately multilingual
+    "RUF002",
+    "RUF003",
+    "SIM105",  # contextlib.suppress is not always clearer than try/except: pass
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
+"app/nlu/timeparse.py" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["ignore::DeprecationWarning"]
+addopts = "-q --strict-markers"

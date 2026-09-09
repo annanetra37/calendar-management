@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: voicecal_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/voicecal_test
+      ENVIRONMENT: test
+      PUBLIC_BASE_URL: https://scheduler.example.test
+      GOOGLE_CLIENT_ID: test-client
+      GOOGLE_CLIENT_SECRET: test-secret
+      GOOGLE_REDIRECT_URI: https://scheduler.example.test/auth/google/callback
+      GOOGLE_WEBHOOK_TOKEN: goog-token
+      TELEGRAM_BOT_TOKEN: "123:ABC"
+      TELEGRAM_WEBHOOK_SECRET: tg-secret
+      TELEGRAM_ALLOWED_USER_IDS: "4242"
+      OPENAI_API_KEY: sk-test
+      ANTHROPIC_API_KEY: sk-ant-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Generate an ephemeral encryption key
+        run: echo "FERNET_KEY=$(python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" >> "$GITHUB_ENV"
+
+      - name: Migrations apply and roll back cleanly
+        run: |
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: Models match the migration
+        run: |
+          alembic revision --autogenerate -m drift-check
+          if grep -qE "op\.(create|drop|alter|add)_" alembic/versions/*drift-check*.py; then
+            echo "::error::Models have drifted from the migrations. Run alembic revision --autogenerate."
+            cat alembic/versions/*drift-check*.py
+            exit 1
+          fi
+          rm -f alembic/versions/*drift-check*.py
+
+      - name: Tests
+        run: pytest -q
+
+      - name: Docker image builds
+        run: docker build -t voice-calendar:ci .
